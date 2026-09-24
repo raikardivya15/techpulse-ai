@@ -47,11 +47,12 @@ export const authApi = {
 
 // Feed & Topic APIs
 export const feedApi = {
-  getHomeFeed: async () => {
+  getHomeFeed: async (topics: string[] = [], activeTopic = '') => {
+    const topicsParam = topics.length > 0 ? `?topics=${encodeURIComponent(topics.join(','))}&activeTopic=${encodeURIComponent(activeTopic)}` : (activeTopic ? `?activeTopic=${encodeURIComponent(activeTopic)}` : '');
     try {
-      return await apiRequest('/feed');
+      return await apiRequest(`/feed${topicsParam}`);
     } catch (err) {
-      const res = await fetch('/api/feed');
+      const res = await fetch(`/api/feed${topicsParam}`);
       if (res.ok) return await res.json();
       throw err;
     }

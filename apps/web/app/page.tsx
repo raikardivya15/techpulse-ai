@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { 
   Sparkles, RefreshCw, ArrowRight,
-  Rocket, Code2, BookOpen, AlertCircle
+  Rocket, Code2, BookOpen, AlertCircle, 
+  Sliders, Plus, Check, Filter, Layers, Flame, ArrowUpRight
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useRealtime } from '@/lib/realtime-context';
@@ -15,22 +16,27 @@ import { TopicCard } from '@/components/TopicCard';
 import { EventCard } from '@/components/EventCard';
 import { LiveIntelligencePanel } from '@/components/LiveIntelligencePanel';
 import { TopicSelectorModal } from '@/components/TopicSelectorModal';
-import { Sliders, Plus, Check } from 'lucide-react';
+import { RealtimeDetailModal, EventDetailData } from '@/components/RealtimeDetailModal';
 
 export default function HomePage() {
   const { user } = useAuth();
   const { latestSignal, liveSignals, simulateSignal } = useRealtime();
   const { selectedTopics, toggleTopic } = useTopics();
-  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
   
+  const [activeTopicFilter, setActiveTopicFilter] = useState<string>('All');
   const [feed, setFeed] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [newSignalsNotice, setNewSignalsNotice] = useState<any[]>([]);
 
-  const fetchFeed = async () => {
+  // Modal states
+  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<EventDetailData | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const fetchFeed = async (topics = selectedTopics, filter = activeTopicFilter) => {
     setIsLoading(true);
     try {
-      const data = await feedApi.getHomeFeed();
+      const data = await feedApi.getHomeFeed(topics, filter === 'All' ? '' : filter);
       setFeed(data);
     } catch (err) {
       console.error('Failed to load feed', err);
@@ -40,8 +46,8 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    fetchFeed();
-  }, []);
+    fetchFeed(selectedTopics, activeTopicFilter);
+  }, [selectedTopics, activeTopicFilter]);
 
   // When a real-time signal arrives via WebSocket, display notice and update feed
   useEffect(() => {
@@ -51,6 +57,11 @@ export default function HomePage() {
   }, [latestSignal]);
 
   const userName = user?.name ? user.name.split(' ')[0] : 'Divya';
+
+  const handleOpenDetail = (ev: any) => {
+    setSelectedEvent(ev);
+    setIsDetailModalOpen(true);
+  };
 
   return (
     <div className="flex w-full">
@@ -65,7 +76,7 @@ export default function HomePage() {
               Good evening, {userName}
             </h1>
             <p className="body-text text-text-secondaryLight dark:text-text-secondaryDark mt-0.5">
-              Here&apos;s what changed across your selected technology topics today.
+              Real-time intelligence personalized for your <span className="font-semibold text-accent-textLight dark:text-accent-textDark">{selectedTopics.length} selected topics</span>.
             </p>
           </div>
 
@@ -79,7 +90,7 @@ export default function HomePage() {
             </button>
 
             <button
-              onClick={fetchFeed}
+              onClick={() => fetchFeed(selectedTopics, activeTopicFilter)}
               disabled={isLoading}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-white dark:bg-card-dark hover:bg-card-hoverLight dark:hover:bg-card-hoverDark border border-border-light dark:border-border-dark text-xs font-medium text-text-secondaryLight dark:text-text-secondaryDark transition-colors"
             >
@@ -97,28 +108,55 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Quick Selected Topics Filter Ribbon */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none flex-wrap">
-          <span className="text-[11px] font-mono uppercase font-bold text-text-mutedLight dark:text-text-mutedDark shrink-0 mr-1">
-            RADAR TOPICS:
-          </span>
-          {selectedTopics.map((topicName) => (
-            <Link
-              key={topicName}
-              href={`/discover?query=${encodeURIComponent(topicName)}`}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-white dark:bg-card-dark border border-border-light dark:border-border-dark text-text-secondaryLight dark:text-text-secondaryDark hover:border-accent/40 hover:text-text-primaryLight dark:hover:text-text-primaryDark text-xs font-medium transition-colors"
+        {/* Selected Topics Interactive Filter Bar */}
+        <div className="p-3 rounded-[10px] bg-white dark:bg-card-dark border border-border-light dark:border-border-dark space-y-2 shadow-xs">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-mono font-bold uppercase text-text-mutedLight dark:text-text-mutedDark">
+              <Filter className="w-3.5 h-3.5 text-accent dark:text-accent-dark" />
+              <span>Filter Radar By Topic:</span>
+            </div>
+
+            <button
+              onClick={() => setIsTopicModalOpen(true)}
+              className="text-[11px] text-accent-textLight dark:text-accent-textDark font-semibold hover:underline flex items-center gap-1"
             >
-              <Check className="w-3 h-3 text-accent dark:text-accent-dark" />
-              <span>{topicName}</span>
-            </Link>
-          ))}
-          <button
-            onClick={() => setIsTopicModalOpen(true)}
-            className="px-2.5 py-1 rounded-[6px] border border-dashed border-border-light dark:border-border-dark text-accent-textLight dark:text-accent-textDark hover:border-accent/60 text-xs font-semibold flex items-center gap-1 transition-colors"
-          >
-            <Plus className="w-3 h-3" />
-            <span>Customize Topics</span>
-          </button>
+              <Plus className="w-3 h-3" />
+              <span>Add / Edit Topics</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none flex-wrap">
+            {/* All Topics Pill */}
+            <button
+              onClick={() => setActiveTopicFilter('All')}
+              className={`flex items-center gap-1 px-3 py-1 rounded-[6px] text-xs font-medium transition-all ${
+                activeTopicFilter === 'All'
+                  ? 'bg-accent text-white dark:text-[#0D0E0D] font-bold shadow-xs'
+                  : 'bg-gray-100 dark:bg-zinc-800 text-text-secondaryLight dark:text-text-secondaryDark hover:text-text-primaryLight dark:hover:text-text-primaryDark'
+              }`}
+            >
+              <span>All Selected ({selectedTopics.length})</span>
+            </button>
+
+            {/* Individual Selected Topic Pills */}
+            {selectedTopics.map((topicName) => {
+              const isActive = activeTopicFilter === topicName;
+              return (
+                <button
+                  key={topicName}
+                  onClick={() => setActiveTopicFilter(isActive ? 'All' : topicName)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-xs font-medium transition-all ${
+                    isActive
+                      ? 'bg-accent text-white dark:text-[#0D0E0D] font-bold shadow-xs'
+                      : 'bg-accent-softLight dark:bg-accent-softDark text-accent-textLight dark:text-accent-textDark border border-accent/20 dark:border-accent-dark/20 hover:bg-accent-softLight/80'
+                  }`}
+                >
+                  <Check className="w-3 h-3 stroke-[3]" />
+                  <span>{topicName}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Realtime Incoming Signals Live Stream Banner */}
@@ -137,12 +175,12 @@ export default function HomePage() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <Link
-                href={`/article/${newSignalsNotice[0].slug}`}
+              <button
+                onClick={() => handleOpenDetail(newSignalsNotice[0])}
                 className="px-3 py-1 rounded-[6px] bg-sage-light hover:bg-sage-hover-light dark:bg-sage-dark dark:hover:bg-sage-hover-dark text-white dark:text-[#0D0E0D] text-[11px] font-medium shadow-xs transition-all"
               >
                 View Live Signal →
-              </Link>
+              </button>
               <button
                 onClick={() => setNewSignalsNotice([])}
                 className="text-[11px] text-text-mutedLight dark:text-text-mutedDark hover:text-text-primaryLight dark:hover:text-text-primaryDark px-1.5 py-1"
@@ -153,7 +191,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 01 — SIGNAL OF THE DAY */}
+        {/* 01 — SIGNAL OF THE DAY (Based on Selected Topics) */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -163,24 +201,24 @@ export default function HomePage() {
               </h2>
             </div>
             <span className="text-[11px] tech-mono text-text-mutedLight dark:text-text-mutedDark">
-              Synthesized from 42 signals
+              Synthesized from active developer signals
             </span>
           </div>
 
           {feed?.hero_signal && <HeroSignalCard topic={feed.hero_signal} />}
         </section>
 
-        {/* 02 — TRENDING NOW */}
+        {/* 02 — TRENDING CLUSTERS IN YOUR SELECTED TOPICS */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="tech-mono font-semibold text-accent-textLight dark:text-accent-textDark">02</span>
               <h2 className="section-heading text-text-primaryLight dark:text-text-primaryDark">
-                Trending Now
+                Trending Topic Vectors
               </h2>
             </div>
             <Link href="/discover" className="text-xs font-medium text-accent-textLight dark:text-accent-textDark hover:underline flex items-center gap-1">
-              <span>View all trends</span>
+              <span>View all in Discover</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -192,17 +230,17 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 03 — FOR YOU (PERSONALIZED FEED) */}
+        {/* 03 — PERSONALIZED RADAR DETAILS (FOR YOU) */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="tech-mono font-semibold text-accent-textLight dark:text-accent-textDark">03</span>
               <h2 className="section-heading text-text-primaryLight dark:text-text-primaryDark">
-                For You
+                Personalized Stream ({activeTopicFilter === 'All' ? 'All Selected Topics' : activeTopicFilter})
               </h2>
             </div>
             <span className="text-[11px] tech-mono text-text-mutedLight dark:text-text-mutedDark">
-              Tuned for {user?.role || 'AI Engineer'}
+              Live Verified Details
             </span>
           </div>
 
@@ -316,7 +354,13 @@ export default function HomePage() {
         onClose={() => setIsTopicModalOpen(false)}
       />
 
+      {/* Realtime Detail Modal */}
+      <RealtimeDetailModal
+        event={selectedEvent}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+      />
+
     </div>
   );
 }
-

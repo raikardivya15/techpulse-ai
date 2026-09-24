@@ -4,9 +4,16 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const topicsParam = searchParams.get('topics') || '';
+    const activeTopic = searchParams.get('activeTopic') || '';
+
+    // If a specific active topic is selected, prioritize searching for that topic
+    const searchQuery = activeTopic && activeTopic !== 'All' ? activeTopic : (topicsParam ? topicsParam.split(',')[0] : '');
+
     // 1. Fetch live signals from our real-time search API
     const liveSearchUrl = new URL('/api/search/live', request.url);
-    liveSearchUrl.searchParams.set('query', '');
+    liveSearchUrl.searchParams.set('query', searchQuery);
     liveSearchUrl.searchParams.set('source', 'all');
 
     const searchRes = await fetch(liveSearchUrl.toString(), { cache: 'no-store' });
@@ -53,6 +60,7 @@ export async function GET(request: Request) {
     const for_you = liveEvents.slice(0, 6);
 
     return NextResponse.json({
+      activeTopic: activeTopic || 'All',
       hero_signal: heroSignal,
       trending: liveTopics.slice(0, 6),
       for_you: for_you.length > 0 ? for_you : liveEvents.slice(0, 4),
@@ -60,10 +68,12 @@ export async function GET(request: Request) {
       startup_radar: startup_radar.length > 0 ? startup_radar : liveEvents.slice(2, 4),
       dev_radar: dev_radar.length > 0 ? dev_radar : liveEvents.slice(4, 6),
       research_radar: research_radar.length > 0 ? research_radar : liveEvents.slice(6, 8),
+      all_signals: liveEvents,
     });
   } catch (err: any) {
     console.error('Feed fallback route error', err);
     return NextResponse.json({
+      activeTopic: 'All',
       hero_signal: null,
       trending: [],
       for_you: [],
@@ -71,6 +81,7 @@ export async function GET(request: Request) {
       startup_radar: [],
       dev_radar: [],
       research_radar: [],
+      all_signals: [],
     });
   }
 }
