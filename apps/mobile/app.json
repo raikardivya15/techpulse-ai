@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "TechPulse AI",
+    "slug": "techpulse-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0A0C10"
+    },
+    "scheme": "techpulse",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ai.techpulse.app"
+    },
+    "android": {
+      "package": "ai.techpulse.app"
+    }
+  }
+}

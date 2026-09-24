@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #F9F9F7;
+    --bg-surface: #FFFFFF;
+    --bg-card: #FFFFFF;
+    --bg-card-hover: #F5F5F2;
+    --text-primary: #171717;
+    --text-secondary: #6B6B6B;
+    --text-muted: #969696;
+    --border-color: #E7E7E3;
+    --divider-color: #EEEEEB;
+    --accent-primary: #6FAF8A;
+    --accent-hover: #5F9D78;
+    --accent-soft: #EAF4ED;
+    --accent-text: #356B4B;
+  }
+
+  .dark {
+    --bg-primary: #0D0E0D;
+    --bg-surface: #151615;
+    --bg-card: #181A18;
+    --bg-card-hover: #1D201D;
+    --text-primary: #F4F4F1;
+    --text-secondary: #9A9D99;
+    --text-muted: #6F736E;
+    --border-color: #282A28;
+    --divider-color: #222522;
+    --accent-primary: #8FC5A3;
+    --accent-hover: #A4D2B5;
+    --accent-soft: #203126;
+    --accent-text: #B9DFC5;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button, .btn {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+  }
+
+  nav, .nav-item {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+  }
+}
+
+/* Typography Hierarchy Classes */
+.brand-logo {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.page-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.hero-headline {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: clamp(28px, 3.5vw, 36px);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.section-heading {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+.card-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+.body-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.metadata-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.tech-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.metric-number {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+}
+
+/* Subtle Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 150, 0.5);
+}
+

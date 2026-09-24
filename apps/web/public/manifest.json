@@ -1,0 +1,57 @@
+{
+  "name": "TECHPULSE AI — Technology Intelligence Radar",
+  "short_name": "TechPulse",
+  "description": "Your AI radar for what is happening across the technology ecosystem.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0D0E0D",
+  "theme_color": "#0D0E0D",
+  "categories": ["technology", "productivity", "utilities", "news"],
+  "shortcuts": [
+    {
+      "name": "AI Pulse Assistant",
+      "short_name": "Pulse",
+      "description": "Query live technology intelligence and agent memory",
+      "url": "/pulse",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ecosystem Discover",
+      "short_name": "Discover",
+      "description": "Browse trending topics and multi-source signals",
+      "url": "/discover",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Saved Signals",
+      "short_name": "Library",
+      "description": "View bookmarked papers, repositories, and radar items",
+      "url": "/library",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Radar Alerts",
+      "short_name": "Alerts",
+      "description": "Real-time critical security and technology notifications",
+      "url": "/notifications",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
