@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { RealtimeProvider } from '@/lib/realtime-context';
@@ -6,12 +6,20 @@ import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileNav } from '@/components/MobileNav';
 import { GlobalShortcuts } from '@/components/GlobalShortcuts';
+import { MobileInstallBanner } from '@/components/MobileInstallBanner';
 
 export const metadata: Metadata = {
   title: 'TECHPULSE AI — Your AI Radar for What’s Happening in Technology',
   description: 'TechPulse continuously watches the technology ecosystem across Reddit, Hacker News, GitHub, arXiv, YC, and technical publications to tell you what actually matters.',
   keywords: ['AI radar', 'tech intelligence', 'AI agents', 'developer tools', 'hacker news', 'arXiv', 'startups'],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#0D0E0D',
 };
 
 export default function RootLayout({
@@ -47,6 +55,7 @@ export default function RootLayout({
                 {children}
               </main>
             </div>
+            <MobileInstallBanner />
             <MobileNav />
           </RealtimeProvider>
         </AuthProvider>

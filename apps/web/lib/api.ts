@@ -47,17 +47,48 @@ export const authApi = {
 
 // Feed & Topic APIs
 export const feedApi = {
-  getHomeFeed: () => apiRequest('/feed'),
-  getDiscover: (category = 'All', query = '') => 
-    apiRequest(`/discover?category=${encodeURIComponent(category)}${query ? `&query=${encodeURIComponent(query)}` : ''}`),
+  getHomeFeed: async () => {
+    try {
+      return await apiRequest('/feed');
+    } catch (err) {
+      const res = await fetch('/api/feed');
+      if (res.ok) return await res.json();
+      throw err;
+    }
+  },
+  getDiscover: async (category = 'All', query = '') => {
+    try {
+      return await apiRequest(`/discover?category=${encodeURIComponent(category)}${query ? `&query=${encodeURIComponent(query)}` : ''}`);
+    } catch (err) {
+      const res = await fetch(`/api/search/live?query=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`);
+      if (res.ok) return await res.json();
+      throw err;
+    }
+  },
+  searchLive: (query = '', category = 'All', source = 'all') =>
+    fetch(`/api/search/live?query=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}&source=${encodeURIComponent(source)}`).then(r => r.json()),
   getTopic: (slug: string) => apiRequest(`/topics/${slug}`),
   getArticle: (id: string) => apiRequest(`/articles/${id}`),
 };
 
 // AI & Pulse APIs
 export const aiApi = {
-  chat: (message: string, history: any[] = [], topic_slug?: string) => 
-    apiRequest('/ai/chat', { method: 'POST', body: JSON.stringify({ message, history, topic_slug }) }),
+  chat: async (message: string, history: any[] = [], topic_slug?: string) => {
+    try {
+      return await apiRequest('/ai/chat', { method: 'POST', body: JSON.stringify({ message, history, topic_slug }) });
+    } catch (err) {
+      // Fallback to Next.js live route
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, history, topic_slug }),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      throw err;
+    }
+  },
   explainQuick: (topic_slug: string, mode = 'tldr') =>
     apiRequest(`/ai/explain?topic_slug=${encodeURIComponent(topic_slug)}&mode=${encodeURIComponent(mode)}`),
 };
