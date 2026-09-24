@@ -111,10 +111,34 @@ export const libraryApi = {
 
 // Notifications & Digests
 export const notificationApi = {
-  getNotifications: () => apiRequest('/notifications'),
-  markRead: (id: string) => apiRequest(`/notifications/${id}/read`, { method: 'POST' }),
-  getDailyDigest: () => apiRequest('/digests/daily'),
-  getWeeklyReport: () => apiRequest('/digests/weekly'),
+  getNotifications: async () => {
+    try {
+      return await apiRequest('/notifications');
+    } catch (e) {
+      const res = await fetch('/api/notifications');
+      if (res.ok) return await res.json();
+      return [];
+    }
+  },
+  markRead: (id: string) => apiRequest(`/notifications/${id}/read`, { method: 'POST' }).catch(() => null),
+  getDailyDigest: async () => {
+    try {
+      return await apiRequest('/digests/daily');
+    } catch (e) {
+      const res = await fetch('/api/digests/daily');
+      if (res.ok) return await res.json();
+      return null;
+    }
+  },
+  getWeeklyReport: async () => {
+    try {
+      return await apiRequest('/digests/weekly');
+    } catch (e) {
+      const res = await fetch('/api/digests/weekly');
+      if (res.ok) return await res.json();
+      return null;
+    }
+  },
 };
 
 // Realtime & Live Telemetry
