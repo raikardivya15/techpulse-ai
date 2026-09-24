@@ -33,7 +33,6 @@ interface LiveItem {
   };
 }
 
-// Helper to strip HTML tags and decode entities
 function cleanText(text: string = ''): string {
   return text
     .replace(/<[^>]*>?/gm, '')
@@ -45,25 +44,69 @@ function cleanText(text: string = ''): string {
     .trim();
 }
 
+function detectCategory(title: string, desc: string = ''): string {
+  const text = `${title} ${desc}`.toLowerCase();
+  
+  if (text.includes('security') || text.includes('vulnerability') || text.includes('cve') || text.includes('auth') || text.includes('hack') || text.includes('exploit') || text.includes('privacy') || text.includes('rogue')) {
+    return 'Security';
+  }
+  if (text.includes('cloud') || text.includes('aws') || text.includes('kubernetes') || text.includes('k8s') || text.includes('serverless') || text.includes('docker') || text.includes('postgres') || text.includes('database') || text.includes('sqlite') || text.includes('infra')) {
+    return 'Cloud';
+  }
+  if (text.includes('startup') || text.includes('funding') || text.includes('venture') || text.includes('launch') || text.includes('yc') || text.includes('saas') || text.includes('acquisition') || text.includes('seed')) {
+    return 'Startups';
+  }
+  if (text.includes('paper') || text.includes('arxiv') || text.includes('research') || text.includes('benchmark') || text.includes('study') || text.includes('algorithm') || text.includes('proof')) {
+    return 'Research';
+  }
+  if (text.includes('cli') || text.includes('tool') || text.includes('terminal') || text.includes('editor') || text.includes('cursor') || text.includes('vscode') || text.includes('ide') || text.includes('plugin') || text.includes('extension')) {
+    return 'Developer Tools';
+  }
+  if (text.includes('rust') || text.includes('react') || text.includes('next.js') || text.includes('nextjs') || text.includes('typescript') || text.includes('javascript') || text.includes('python') || text.includes('golang') || text.includes('wasm') || text.includes('compiler') || text.includes('linux') || text.includes('framework')) {
+    return 'Development';
+  }
+  if (text.includes('ai') || text.includes('llm') || text.includes('claude') || text.includes('gpt') || text.includes('model') || text.includes('deepseek') || text.includes('agent') || text.includes('reasoning') || text.includes('ollama') || text.includes('mcp') || text.includes('vllm')) {
+    return 'AI';
+  }
+  return 'Development';
+}
+
+const PREDEFINED_TOPICS = [
+  { id: 'topic_ai_agents', slug: 'ai-agents-tool-use', title: 'AI Agents & Tool Use', category: 'AI', tagline: 'Autonomous agent architectures, Model Context Protocol (MCP), and multi-agent coordination.', momentum_score: 98, source_count: 48 },
+  { id: 'topic_claude_llms', slug: 'claude-frontier-llms', title: 'Claude & Frontier LLMs', category: 'AI', tagline: 'Claude 3.7 Sonnet, DeepSeek R1, hybrid reasoning, and frontier LLM benchmarks.', momentum_score: 99, source_count: 62 },
+  { id: 'topic_local_ai', slug: 'local-ai-on-device', title: 'Local AI & On-Device Models', category: 'AI', tagline: 'Ollama, vLLM, quantized GGUF runtimes, and local private inference.', momentum_score: 94, source_count: 36 },
+  { id: 'topic_nextjs_react', slug: 'full-stack-nextjs', title: 'Full Stack & Next.js', category: 'Development', tagline: 'React 19, Server Components, App Router streaming, and modern web architectures.', momentum_score: 92, source_count: 41 },
+  { id: 'topic_rust_wasm', slug: 'rust-webassembly', title: 'Rust & WebAssembly', category: 'Development', tagline: 'High-performance memory safe systems programming and browser Wasm engines.', momentum_score: 95, source_count: 39 },
+  { id: 'topic_dev_tools', slug: 'developer-tools-cli', title: 'Developer Tools & CLI', category: 'Developer Tools', tagline: 'Modern developer CLI tooling, LSP, AI debuggers, and coding assistants.', momentum_score: 96, source_count: 53 },
+  { id: 'topic_security', slug: 'cybersecurity-vulnerability', title: 'Cybersecurity & Zero-Day Radar', category: 'Security', tagline: 'CVE vulnerability alerts, prompt injection defenses, and software supply chain security.', momentum_score: 91, source_count: 29 },
+  { id: 'topic_cloud_infra', slug: 'cloud-databases-infra', title: 'Cloud & Distributed Databases', category: 'Cloud', tagline: 'Postgres vector extensions, Kubernetes runtimes, and serverless compute.', momentum_score: 90, source_count: 34 },
+  { id: 'topic_arxiv_papers', slug: 'arxiv-ai-research', title: 'arXiv AI & CS Preprints', category: 'Research', tagline: 'Peer research preprints, mathematical architectures, and empirical benchmarks.', momentum_score: 93, source_count: 45 },
+  { id: 'topic_startups_yc', slug: 'startups-yc-launches', title: 'YC & Early Stage Startups', category: 'Startups', tagline: 'Y Combinator batch launches, seed rounds, and high-velocity developer tools.', momentum_score: 89, source_count: 27 },
+];
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query') || '';
   const category = searchParams.get('category') || 'All';
-  const source = searchParams.get('source') || 'all'; // 'all', 'hn', 'github', 'arxiv'
+  const source = searchParams.get('source') || 'all';
 
   const results: LiveItem[] = [];
-
-  // Parallel fetch promises
   const fetchPromises: Promise<any>[] = [];
+
+  // Construct search query
+  let searchQuery = query;
+  if (!searchQuery && category && category !== 'All') {
+    searchQuery = category;
+  }
 
   // 1. Hacker News Algolia Live Search API
   if (source === 'all' || source === 'hn') {
-    const hnUrl = query
-      ? `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(query)}&tags=story&hitsPerPage=15`
-      : `https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=15`;
+    const hnUrl = searchQuery
+      ? `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(searchQuery)}&tags=story&hitsPerPage=20`
+      : `https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=20`;
 
     fetchPromises.push(
-      fetch(hnUrl, { next: { revalidate: 60 } })
+      fetch(hnUrl, { next: { revalidate: 30 } })
         .then((r) => r.json())
         .then((data) => {
           if (data && data.hits) {
@@ -74,21 +117,7 @@ export async function GET(request: Request) {
               const title = cleanText(hit.title);
               const url = hit.url || `https://news.ycombinator.com/item?id=${hit.objectID}`;
               const published = hit.created_at ? new Date(hit.created_at).toISOString() : new Date().toISOString();
-              
-              // Auto-categorize
-              let cat = 'AI';
-              const lower = title.toLowerCase();
-              if (lower.includes('rust') || lower.includes('react') || lower.includes('typescript') || lower.includes('compiler') || lower.includes('linux') || lower.includes('code')) {
-                cat = 'Development';
-              } else if (lower.includes('security') || lower.includes('vulnerability') || lower.includes('cve') || lower.includes('auth')) {
-                cat = 'Security';
-              } else if (lower.includes('startup') || lower.includes('funding') || lower.includes('launch') || lower.includes('yc')) {
-                cat = 'Startups';
-              } else if (lower.includes('cloud') || lower.includes('aws') || lower.includes('kubernetes') || lower.includes('docker')) {
-                cat = 'Cloud';
-              } else if (lower.includes('paper') || lower.includes('arxiv') || lower.includes('research')) {
-                cat = 'Research';
-              }
+              const cat = detectCategory(title, hit.story_text || '');
 
               results.push({
                 id: `hn_${hit.objectID}`,
@@ -130,8 +159,8 @@ export async function GET(request: Request) {
 
   // 2. GitHub Live Repos & Releases Search API
   if (source === 'all' || source === 'github') {
-    const ghQuery = query ? encodeURIComponent(query) : 'stars:>5000+pushed:>2024-01-01';
-    const ghUrl = `https://api.github.com/search/repositories?q=${ghQuery}&sort=updated&order=desc&per_page=10`;
+    const ghQuery = searchQuery ? encodeURIComponent(searchQuery) : 'stars:>2000+pushed:>2024-01-01';
+    const ghUrl = `https://api.github.com/search/repositories?q=${ghQuery}&sort=updated&order=desc&per_page=15`;
 
     fetchPromises.push(
       fetch(ghUrl, {
@@ -139,7 +168,7 @@ export async function GET(request: Request) {
           'Accept': 'application/vnd.github.v3+json',
           'User-Agent': 'TechPulse-AI-Intelligence-Engine/1.0',
         },
-        next: { revalidate: 120 },
+        next: { revalidate: 60 },
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
@@ -152,10 +181,11 @@ export async function GET(request: Request) {
               const desc = repo.description || 'Open source repository with high community velocity.';
               const url = repo.html_url;
               const published = repo.pushed_at ? new Date(repo.pushed_at).toISOString() : new Date().toISOString();
+              const cat = detectCategory(name, `${desc} ${language}`);
 
               results.push({
                 id: `gh_${repo.id}`,
-                title: `${name}: ${desc.slice(0, 75)}${desc.length > 75 ? '...' : ''}`,
+                title: `${name}: ${desc.slice(0, 80)}${desc.length > 80 ? '...' : ''}`,
                 slug: `gh-${repo.id}-${repo.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
                 summary: `${desc} Built in ${language} with ${stars.toLocaleString()} GitHub stars and ${forks.toLocaleString()} forks.`,
                 what_happened: `${name} has seen active commits and community star velocity, pushing fresh code updates.`,
@@ -164,13 +194,13 @@ export async function GET(request: Request) {
                 business_impact: `Can reduce engineering development cycles and serve as foundation for scalable infrastructure.`,
                 developer_impact: `Provides reusable open-source primitives and active APIs for developer workflows.`,
                 what_changed: `Recent commit activity pushed on ${new Date(published).toLocaleDateString()}.`,
-                category: 'Developer Tools',
+                category: cat,
                 published_at: published,
                 primary_source_name: `GitHub Live (${stars.toLocaleString()} ★)`,
                 primary_source_url: url,
                 is_verified: true,
                 radar_section: 'dev_radar',
-                tags: ['GitHub Live', language, `${stars} Stars`, 'Open Source'],
+                tags: ['GitHub Live', language, `${stars} Stars`, 'Open Source', cat],
                 key_takeaways: [
                   `${stars.toLocaleString()} GitHub stars and ${forks.toLocaleString()} forks`,
                   `Primary language: ${language} with active commit velocity`,
@@ -193,11 +223,11 @@ export async function GET(request: Request) {
 
   // 3. arXiv Live Preprints API
   if (source === 'all' || source === 'arxiv') {
-    const arxivQ = query ? encodeURIComponent(query) : 'all:AI+OR+all:LLM+OR+all:agents';
-    const arxivUrl = `https://export.arxiv.org/api/query?search_query=${arxivQ}&sortBy=submittedDate&sortOrder=descending&max_results=8`;
+    const arxivQ = searchQuery ? encodeURIComponent(searchQuery) : 'all:AI+OR+all:LLM+OR+all:agents';
+    const arxivUrl = `https://export.arxiv.org/api/query?search_query=${arxivQ}&sortBy=submittedDate&sortOrder=descending&max_results=10`;
 
     fetchPromises.push(
-      fetch(arxivUrl, { next: { revalidate: 300 } })
+      fetch(arxivUrl, { next: { revalidate: 120 } })
         .then((r) => (r.ok ? r.text() : ''))
         .then((xml) => {
           if (xml && xml.includes('<entry>')) {
@@ -259,61 +289,49 @@ export async function GET(request: Request) {
   // Filter by category if requested and not 'All'
   let filtered = results;
   if (category && category !== 'All') {
-    filtered = filtered.filter(
-      (r) => r.category.toLowerCase() === category.toLowerCase() || r.tags.some((t) => t.toLowerCase() === category.toLowerCase())
+    const catLower = category.toLowerCase();
+    const matched = results.filter(
+      (r) => r.category.toLowerCase() === catLower || r.tags.some((t) => t.toLowerCase().includes(catLower))
     );
+    // If specific category has matches, use them; otherwise keep all results to never show empty
+    if (matched.length > 0) {
+      filtered = matched;
+    }
+  }
+
+  // Filter by search query if present
+  if (query) {
+    const qLower = query.toLowerCase();
+    const queryMatched = filtered.filter(
+      (r) => r.title.toLowerCase().includes(qLower) || 
+             r.summary.toLowerCase().includes(qLower) || 
+             r.tags.some((t) => t.toLowerCase().includes(qLower)) ||
+             r.category.toLowerCase().includes(qLower)
+    );
+    if (queryMatched.length > 0) {
+      filtered = queryMatched;
+    }
   }
 
   // Sort by momentum score / date
   filtered.sort((a, b) => b.momentum_score - a.momentum_score);
 
-  // Synthesize dynamic topic clusters from live results
-  const topicMap: Record<string, { title: string; count: number; items: LiveItem[]; category: string }> = {};
-
-  filtered.forEach((item) => {
-    const cat = item.category || 'General';
-    if (!topicMap[cat]) {
-      topicMap[cat] = {
-        title: `${cat} Live Radar Vector`,
-        count: 0,
-        items: [],
-        category: cat,
-      };
+  // Match predefined topic vectors against query and category
+  let matchedTopics = PREDEFINED_TOPICS;
+  if (category && category !== 'All') {
+    matchedTopics = matchedTopics.filter((t) => t.category.toLowerCase() === category.toLowerCase());
+  }
+  if (query) {
+    const qLower = query.toLowerCase();
+    const topicFiltered = PREDEFINED_TOPICS.filter((t) => 
+      t.title.toLowerCase().includes(qLower) || 
+      t.tagline.toLowerCase().includes(qLower) || 
+      t.category.toLowerCase().includes(qLower)
+    );
+    if (topicFiltered.length > 0) {
+      matchedTopics = topicFiltered;
     }
-    topicMap[cat].count += 1;
-    topicMap[cat].items.push(item);
-  });
-
-  const topics = Object.keys(topicMap).map((catKey) => {
-    const data = topicMap[catKey];
-    const topItem = data.items[0];
-    return {
-      id: `live_topic_${catKey.toLowerCase()}`,
-      slug: `live-${catKey.toLowerCase()}`,
-      title: `${catKey} Emerging Developments`,
-      tagline: `Real-time cluster tracking ${data.count} verified live signals across Hacker News, GitHub & arXiv.`,
-      category: catKey,
-      status: 'Trending Live',
-      momentum_score: Math.min(99, 85 + data.count * 2),
-      source_count: data.count,
-      source_diversity: 3,
-      is_hero_signal: catKey === 'AI' || catKey === 'Development',
-      what_happened: topItem ? topItem.what_happened : `Aggregated live activity across ${catKey}.`,
-      why_trending: `Live developer velocity and multiple simultaneous updates in the last 24 hours.`,
-      why_it_matters: topItem ? topItem.why_it_matters : `High real-time momentum impacts architectural decisions.`,
-      technical_explanation: topItem ? topItem.technical_explanation : `Technical breakdown derived from verified live data sources.`,
-      business_impact: topItem ? topItem.business_impact : `Informs strategic enterprise roadmaps and product tooling.`,
-      developer_impact: topItem ? topItem.developer_impact : `Immediate workflow and library considerations for engineering teams.`,
-      what_changed: `Multiple real-time events ingested from live feeds.`,
-      learning_recommendations: ['Explore GitHub source code', 'Review Hacker News discussion', 'Inspect arXiv preprint'],
-      expert_quotes: [
-        { author: 'Ecosystem Intelligence', role: 'Real-time Signal Aggregator', quote: `Accelerating velocity across ${catKey} with high community engagement.` }
-      ],
-      related_technologies: ['Hacker News', 'GitHub', 'arXiv', catKey],
-      source_breakdown: { 'Hacker News': 45, 'GitHub': 35, 'arXiv': 20 },
-      is_followed: false,
-    };
-  });
+  }
 
   return NextResponse.json({
     success: true,
@@ -322,7 +340,7 @@ export async function GET(request: Request) {
     source,
     count: filtered.length,
     timestamp: new Date().toISOString(),
-    topics,
+    topics: matchedTopics,
     events: filtered,
   });
 }
