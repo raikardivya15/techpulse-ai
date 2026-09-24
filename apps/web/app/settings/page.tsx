@@ -8,10 +8,14 @@ import {
 } from 'lucide-react';
 import { settingsApi, authApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useTopics } from '@/lib/topics-context';
+import { TopicSelectorModal } from '@/components/TopicSelectorModal';
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, updateUser, logout, darkMode, toggleDarkMode } = useAuth();
+  const { selectedTopics, toggleTopic } = useTopics();
+  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
   
   const [name, setName] = useState(user?.name || 'Divya Raikar');
   const [role, setRole] = useState(user?.role || 'AI Engineer');
@@ -182,6 +186,59 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* Monitored Topics Selection Section */}
+        <section className="p-5 sm:p-6 rounded-[10px] bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark space-y-4 shadow-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-divider-light dark:border-divider-dark">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🎯</span>
+              <h2 className="text-[11px] font-mono uppercase tracking-wider text-text-muted-light dark:text-text-muted-dark font-semibold">
+                MONITORED TOPICS & RADAR VECTORS ({selectedTopics.length})
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsTopicModalOpen(true)}
+              className="text-xs font-semibold text-accent-textLight dark:text-accent-textDark hover:underline"
+            >
+              + Customize All Topics
+            </button>
+          </div>
+
+          <div>
+            <p className="body-text text-xs text-text-secondary-light dark:text-text-secondary-dark mb-3">
+              Select the technologies and topic clusters you want actively monitored for breaking news and updates.
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {selectedTopics.map((topicName) => (
+                <div
+                  key={topicName}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-accent-softLight dark:bg-accent-softDark text-accent-textLight dark:text-accent-textDark border border-accent/25 dark:border-accent-dark/25 text-xs font-semibold shadow-xs"
+                >
+                  <span>✓ {topicName}</span>
+                  <button
+                    type="button"
+                    onClick={() => toggleTopic(topicName)}
+                    className="ml-1 text-accent hover:text-red-500 transition-colors"
+                    title="Remove topic"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setIsTopicModalOpen(true)}
+                className="px-3 py-1.5 rounded-[8px] border border-dashed border-border-light dark:border-border-dark hover:border-accent/50 text-xs font-medium text-text-muted-light dark:text-text-muted-dark transition-colors"
+              >
+                + Add More Topics
+              </button>
+            </div>
+          </div>
+        </section>
+
         {/* Notifications & Quiet Hours */}
         <section className="p-5 sm:p-6 rounded-[10px] bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark space-y-4 shadow-xs">
           <div className="flex items-center gap-2 pb-2 border-b border-divider-light dark:border-divider-dark">
@@ -298,6 +355,12 @@ export default function SettingsPage() {
           </button>
         </div>
       </section>
+
+      {/* Topic Selector Modal */}
+      <TopicSelectorModal
+        isOpen={isTopicModalOpen}
+        onClose={() => setIsTopicModalOpen(false)}
+      />
 
     </div>
   );

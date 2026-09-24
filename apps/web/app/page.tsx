@@ -9,14 +9,20 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { useRealtime } from '@/lib/realtime-context';
 import { feedApi } from '@/lib/api';
+import { useTopics } from '@/lib/topics-context';
 import { HeroSignalCard } from '@/components/HeroSignalCard';
 import { TopicCard } from '@/components/TopicCard';
 import { EventCard } from '@/components/EventCard';
 import { LiveIntelligencePanel } from '@/components/LiveIntelligencePanel';
+import { TopicSelectorModal } from '@/components/TopicSelectorModal';
+import { Sliders, Plus, Check } from 'lucide-react';
 
 export default function HomePage() {
   const { user } = useAuth();
   const { latestSignal, liveSignals, simulateSignal } = useRealtime();
+  const { selectedTopics, toggleTopic } = useTopics();
+  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
+  
   const [feed, setFeed] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [newSignalsNotice, setNewSignalsNotice] = useState<any[]>([]);
@@ -59,11 +65,19 @@ export default function HomePage() {
               Good evening, {userName}
             </h1>
             <p className="body-text text-text-secondaryLight dark:text-text-secondaryDark mt-0.5">
-              Here&apos;s what changed across technology today.
+              Here&apos;s what changed across your selected technology topics today.
             </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setIsTopicModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-accent-softLight dark:bg-accent-softDark text-accent-textLight dark:text-accent-textDark border border-accent/30 dark:border-accent-dark/30 text-xs font-semibold shadow-xs hover:bg-accent-softLight/80 transition-colors"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Select Topics ({selectedTopics.length})</span>
+            </button>
+
             <button
               onClick={fetchFeed}
               disabled={isLoading}
@@ -72,6 +86,7 @@ export default function HomePage() {
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-accent dark:text-accent-dark' : ''}`} />
               <span>Refresh</span>
             </button>
+            
             <Link
               href="/pulse"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-accent hover:bg-accent-hoverLight dark:bg-accent-dark dark:hover:bg-accent-hoverDark text-white dark:text-[#0D0E0D] text-xs font-medium shadow-xs transition-all"
@@ -80,6 +95,30 @@ export default function HomePage() {
               <span>Ask Pulse</span>
             </Link>
           </div>
+        </div>
+
+        {/* Quick Selected Topics Filter Ribbon */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none flex-wrap">
+          <span className="text-[11px] font-mono uppercase font-bold text-text-mutedLight dark:text-text-mutedDark shrink-0 mr-1">
+            RADAR TOPICS:
+          </span>
+          {selectedTopics.map((topicName) => (
+            <Link
+              key={topicName}
+              href={`/discover?query=${encodeURIComponent(topicName)}`}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-white dark:bg-card-dark border border-border-light dark:border-border-dark text-text-secondaryLight dark:text-text-secondaryDark hover:border-accent/40 hover:text-text-primaryLight dark:hover:text-text-primaryDark text-xs font-medium transition-colors"
+            >
+              <Check className="w-3 h-3 text-accent dark:text-accent-dark" />
+              <span>{topicName}</span>
+            </Link>
+          ))}
+          <button
+            onClick={() => setIsTopicModalOpen(true)}
+            className="px-2.5 py-1 rounded-[6px] border border-dashed border-border-light dark:border-border-dark text-accent-textLight dark:text-accent-textDark hover:border-accent/60 text-xs font-semibold flex items-center gap-1 transition-colors"
+          >
+            <Plus className="w-3 h-3" />
+            <span>Customize Topics</span>
+          </button>
         </div>
 
         {/* Realtime Incoming Signals Live Stream Banner */}
@@ -270,6 +309,12 @@ export default function HomePage() {
 
       {/* Right Desktop Intelligence Rail */}
       <LiveIntelligencePanel />
+
+      {/* Topic Selector Modal */}
+      <TopicSelectorModal
+        isOpen={isTopicModalOpen}
+        onClose={() => setIsTopicModalOpen(false)}
+      />
 
     </div>
   );

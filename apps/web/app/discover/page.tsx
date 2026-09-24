@@ -5,18 +5,21 @@ import { useSearchParams } from 'next/navigation';
 import { 
   Search, Filter, Sparkles, Layers, ArrowUpRight, 
   Radio, Globe, Github, BookOpen, Clock, Activity, 
-  RefreshCw, ShieldCheck, Flame, Cpu 
+  RefreshCw, ShieldCheck, Flame, Sliders, Check, Plus
 } from 'lucide-react';
 import { feedApi } from '@/lib/api';
+import { useTopics } from '@/lib/topics-context';
 import { TopicCard } from '@/components/TopicCard';
 import { EventCard } from '@/components/EventCard';
 import { RealtimeDetailModal, EventDetailData } from '@/components/RealtimeDetailModal';
+import { TopicSelectorModal } from '@/components/TopicSelectorModal';
 
 function DiscoverContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get('category') || 'All';
   const initialQuery = searchParams.get('query') || '';
 
+  const { selectedTopics, toggleTopic } = useTopics();
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [activeSource, setActiveSource] = useState<'all' | 'hn' | 'github' | 'arxiv'>('all');
@@ -26,9 +29,10 @@ function DiscoverContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState<string>('');
   
-  // Modal state for viewing rich real-time details
+  // Modal states
   const [selectedEvent, setSelectedEvent] = useState<EventDetailData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
 
   const categories = [
     'All', 'AI', 'Development', 'Startups', 'Research', 'Security', 'Developer Tools', 'Cloud'
@@ -48,7 +52,6 @@ function DiscoverContent() {
     setIsLoading(true);
     try {
       if (live) {
-        // Query live real-time search engine
         const liveRes = await feedApi.searchLive(q, cat, src);
         if (liveRes && liveRes.success) {
           setResults({
@@ -57,7 +60,6 @@ function DiscoverContent() {
           });
           setLastRefreshed(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
         } else {
-          // Fallback to local DB discover
           const dbData = await feedApi.getDiscover(cat, q);
           setResults({ topics: dbData.topics || [], events: dbData.events || [] });
         }
@@ -112,13 +114,22 @@ function DiscoverContent() {
           </p>
         </div>
 
-        {/* Live Refresh Button */}
+        {/* Action Controls */}
         <div className="flex items-center gap-2">
           {lastRefreshed && (
             <span className="text-[11px] text-text-mutedLight dark:text-text-mutedDark tech-mono hidden md:inline">
               Updated {lastRefreshed}
             </span>
           )}
+          
+          <button
+            onClick={() => setIsTopicModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-accent-softLight dark:bg-accent-softDark text-accent-textLight dark:text-accent-textDark border border-accent/30 dark:border-accent-dark/30 text-xs font-semibold shadow-xs hover:bg-accent-softLight/80 transition-colors"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Select Topics ({selectedTopics.length})</span>
+          </button>
+
           <button
             onClick={() => handleSearch(activeCategory, searchQuery, activeSource, isLiveMode)}
             disabled={isLoading}
@@ -127,6 +138,38 @@ function DiscoverContent() {
             <RefreshCw className={`w-3.5 h-3.5 text-accent dark:text-accent-dark ${isLoading ? 'animate-spin' : ''}`} />
             <span>Fetch Live</span>
           </button>
+        </div>
+      </div>
+
+      {/* Selected Topics Multi-Select Pill Bar */}
+      <div className="p-3 rounded-[10px] bg-white dark:bg-card-dark border border-border-light dark:border-border-dark space-y-2 shadow-xs">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-text-mutedLight dark:text-text-mutedDark flex items-center gap-1.5">
+            <span>🎯 Monitored Topics ({selectedTopics.length})</span>
+          </span>
+          <button
+            onClick={() => setIsTopicModalOpen(true)}
+            className="text-[11px] text-accent-textLight dark:text-accent-textDark font-semibold hover:underline flex items-center gap-1"
+          >
+            <Plus className="w-3 h-3" />
+            <span>Add / Edit Topics</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none flex-wrap">
+          {selectedTopics.map((topicName) => (
+            <button
+              key={topicName}
+              onClick={() => {
+                setSearchQuery(topicName);
+                handleSearch(activeCategory, topicName, activeSource, isLiveMode);
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-accent-softLight dark:bg-accent-softDark text-accent-textLight dark:text-accent-textDark text-[11px] font-medium border border-accent/25 dark:border-accent-dark/25 hover:bg-accent-softLight/90 transition-colors"
+            >
+              <Check className="w-3 h-3 stroke-[3]" />
+              <span>{topicName}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -348,6 +391,12 @@ function DiscoverContent() {
         event={selectedEvent}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      {/* Dedicated Topic Selector Modal */}
+      <TopicSelectorModal
+        isOpen={isTopicModalOpen}
+        onClose={() => setIsTopicModalOpen(false)}
       />
 
     </div>

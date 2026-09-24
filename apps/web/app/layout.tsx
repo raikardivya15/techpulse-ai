@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { RealtimeProvider } from '@/lib/realtime-context';
+import { TopicsProvider } from '@/lib/topics-context';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileNav } from '@/components/MobileNav';
@@ -46,18 +47,20 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-[#F9F9F7] dark:bg-[#0D0E0D] text-[#171717] dark:text-[#F4F4F1] font-sans transition-colors antialiased selection:bg-[#6FAF8A]/25 selection:text-[#356B4B] dark:selection:bg-[#8FC5A3]/25 dark:selection:text-[#B9DFC5]">
         <AuthProvider>
-          <RealtimeProvider>
-            <GlobalShortcuts />
-            <Navbar />
-            <div className="flex-1 flex max-w-7xl w-full mx-auto">
-              <Sidebar />
-              <main className="flex-1 min-w-0 pb-24 lg:pb-12 px-0 sm:px-2">
-                {children}
-              </main>
-            </div>
-            <MobileInstallBanner />
-            <MobileNav />
-          </RealtimeProvider>
+          <TopicsProvider>
+            <RealtimeProvider>
+              <GlobalShortcuts />
+              <Navbar />
+              <div className="flex-1 flex max-w-7xl w-full mx-auto">
+                <Sidebar />
+                <main className="flex-1 min-w-0 pb-24 lg:pb-12 px-0 sm:px-2">
+                  {children}
+                </main>
+              </div>
+              <MobileInstallBanner />
+              <MobileNav />
+            </RealtimeProvider>
+          </TopicsProvider>
         </AuthProvider>
       </body>
     </html>
